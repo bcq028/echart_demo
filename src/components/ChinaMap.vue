@@ -23,8 +23,8 @@ let options:echarts.EChartsCoreOption = {
     },
     visualMap: {
       left: 'right',
-      min: 0,
-      max: 1000,
+      min: 1990000,
+      max: 2000000,
       inRange: {
         color: [
           '#313695',

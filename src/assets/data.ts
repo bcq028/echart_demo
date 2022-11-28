@@ -1,5 +1,7 @@
-import { Ref, ref } from "vue";
+import { Ref, ref, watchEffect } from "vue";
 import { io } from 'socket.io-client'
+import { cur_index } from "../pages";
+import * as service from '../service'
 
 export const tableData1: Ref<{ key: string, value: number }[]> = ref(
     []
@@ -65,39 +67,72 @@ export function updateShopping(gender: number, value: number) {
     data.value.push(value);
 }
 
+export const gender0=ref(0)
+export const gender1=ref(0)
 
-var socket = io('http://' + '122.9.66.251' + ':' + '5000');
-socket.on('connect', function () {
-    socket.emit('test_connect', { data: 'I\'m connected!' });
-});
-
-socket.on('merchant', (data: any) => {
-    data = eval(data).data
-    appendToTable1(2, Object.keys(data)[0], data[Object.keys(data)[0]])
-})
-
-socket.on('brand', (data: any) => {
-    data = eval(data).data
-    appendToTable1(3, Object.keys(data)[0], data[Object.keys(data)[0]])
-})
-
-socket.on('item', (data: any) => {
-    data = eval(data).data
-    appendToTable1(4, Object.keys(data)[0], data[Object.keys(data)[0]])
-})
-
-socket.on('cat', (data: any) => {
-    data = eval(data).data
-    appendToTable1(1, Object.keys(data)[0], data[Object.keys(data)[0]])
-})
-
-socket.on('province', (data: any) => {
-    data = eval(data).data
-    updateCity(Object.keys(data)[0], data[Object.keys(data)[0]])
-})
-
-socket.on('gender', (data: any) => {
-    data = eval(data).data
-    updateShopping(parseInt(Object.keys(data)[0]), data[Object.keys(data)[0]])
-})
-
+export function start(){
+    if(cur_index.value==1){
+        var socket = io('http://' + '122.9.66.251' + ':' + '5000');
+    socket.on('connect', function () {
+        socket.emit('test_connect', { data: 'I\'m connected!' });
+    });
+    
+    socket.on('merchant', (data: any) => {
+        data = eval(data).data
+        appendToTable1(2, Object.keys(data)[0], data[Object.keys(data)[0]])
+    })
+    
+    socket.on('brand', (data: any) => {
+        data = eval(data).data
+        appendToTable1(3, Object.keys(data)[0], data[Object.keys(data)[0]])
+    })
+    
+    socket.on('item', (data: any) => {
+        data = eval(data).data
+        appendToTable1(4, Object.keys(data)[0], data[Object.keys(data)[0]])
+    })
+    
+    socket.on('cat', (data: any) => {
+        data = eval(data).data
+        appendToTable1(1, Object.keys(data)[0], data[Object.keys(data)[0]])
+    })
+    
+    socket.on('province', (data: any) => {
+        data = eval(data).data
+        updateCity(Object.keys(data)[0], data[Object.keys(data)[0]])
+    })
+    
+    socket.on('gender', (data: any) => {
+        data = eval(data).data
+        updateShopping(parseInt(Object.keys(data)[0]), data[Object.keys(data)[0]])
+    })
+    
+    }else{
+        watchEffect(async ()=>{
+            let data:{province:string,score:number}[]= await service.get_all_province() 
+            data.forEach(entry=>{
+                updateCity(entry.province,entry.score)
+            })
+            let data2:{cat_id:string,score:number}[]= await service.get_top10_cat();
+            data2.forEach(data=>{
+                appendToTable1(1,data.cat_id,data.score)
+            })
+            let data3:{merchant_id:string,score:number}[]= await service.get_top10_merchant();
+            data3.forEach(data=>{
+                appendToTable1(2,data.merchant_id,data.score)
+            })
+            let data4=await service.get_top10_item();
+            data4.forEach(data=>{
+                appendToTable1(3,data.item_id,data.score)
+            })
+            let data5=await service.get_top10_brand();
+            data5.forEach(data=>{
+                appendToTable1(5,data.brand_id,data.score)
+            })
+            let data6=await service.get_all_gender()
+            gender0.value=data6[0].count
+            gender1.value=data6[1].count
+        })
+        
+    }
+}
